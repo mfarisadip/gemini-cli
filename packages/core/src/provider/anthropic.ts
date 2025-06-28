@@ -14,7 +14,6 @@ import type {
   FinishReason,
 } from '@google/genai';
 import type { ContentGenerator } from '../core/contentGenerator.js';
-import { getAnthropicAccessToken } from '../auth/anthropic.js';
 
 /**
  * Anthropic API configuration
@@ -23,6 +22,7 @@ export interface AnthropicConfig {
   apiKey?: string;
   model: string;
   baseUrl?: string;
+  fetch?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 }
 
 /**
@@ -51,11 +51,15 @@ interface AnthropicResponse {
 export class AnthropicContentGenerator implements ContentGenerator {
   private config: AnthropicConfig;
   private baseUrl: string;
+  private fetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
   constructor(config: AnthropicConfig) {
     this.config = config;
+    // Use Claude Code specific API endpoint when using OAuth credentials
     this.baseUrl = config.baseUrl || 'https://api.anthropic.com';
+    this.fetchFn = config.fetch || fetch;
   }
+
 
   /**
    * Generate content using Anthropic Claude API
@@ -66,34 +70,22 @@ export class AnthropicContentGenerator implements ContentGenerator {
     try {
       // Get authentication details
       const apiKey = this.config.apiKey || process.env.ANTHROPIC_API_KEY;
-      const oauthToken = await getAnthropicAccessToken();
-
-      // Check authentication options
-      if (!apiKey && !oauthToken) {
-        throw new Error(
-          'No Anthropic authentication found. Please authenticate using OAuth or set ANTHROPIC_API_KEY environment variable.',
-        );
-      }
 
       // Convert Gemini format to Anthropic format
       const anthropicRequest = this.convertToAnthropicFormat(request);
 
-      // Prepare headers based on authentication type
+      // Prepare headers
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
       };
 
-      if (oauthToken) {
-        headers['Authorization'] = `Bearer ${oauthToken}`;
-        headers['anthropic-beta'] = 'oauth-2025-04-20';
-        console.debug('Using OAuth authentication for Anthropic');
-      } else if (apiKey) {
+      // Add API key if available (OAuth is handled by custom fetch in contentGenerator)
+      if (apiKey) {
         headers['x-api-key'] = apiKey;
-        console.debug('Using API key authentication for Anthropic');
       }
 
-      const response = await fetch(`${this.baseUrl}/v1/messages`, {
+      const response = await this.fetchFn(`${this.baseUrl}/v1/messages`, {
         method: 'POST',
         headers,
         body: JSON.stringify(anthropicRequest),
@@ -133,14 +125,6 @@ export class AnthropicContentGenerator implements ContentGenerator {
     try {
       // Get authentication details
       const apiKey = this.config.apiKey || process.env.ANTHROPIC_API_KEY;
-      const oauthToken = await getAnthropicAccessToken();
-
-      // Check authentication options
-      if (!apiKey && !oauthToken) {
-        throw new Error(
-          'No Anthropic authentication found. Please authenticate using OAuth or set ANTHROPIC_API_KEY environment variable.',
-        );
-      }
 
       // Convert Gemini format to Anthropic format
       const anthropicRequest = {
@@ -148,22 +132,18 @@ export class AnthropicContentGenerator implements ContentGenerator {
         stream: true,
       };
 
-      // Prepare headers based on authentication type
+      // Prepare headers
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
       };
 
-      if (oauthToken) {
-        headers['Authorization'] = `Bearer ${oauthToken}`;
-        headers['anthropic-beta'] = 'oauth-2025-04-20';
-        console.debug('Using OAuth authentication for Anthropic');
-      } else if (apiKey) {
+      // Add API key if available (OAuth is handled by custom fetch in contentGenerator)
+      if (apiKey) {
         headers['x-api-key'] = apiKey;
-        console.debug('Using API key authentication for Anthropic');
       }
 
-      const response = await fetch(`${this.baseUrl}/v1/messages`, {
+      const response = await this.fetchFn(`${this.baseUrl}/v1/messages`, {
         method: 'POST',
         headers,
         body: JSON.stringify(anthropicRequest),

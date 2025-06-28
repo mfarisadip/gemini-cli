@@ -84,5 +84,7 @@
     "typescript-eslint": "^8.30.1",
     "yargs": "^17.7.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@openauthjs/openauth": "^0.4.3"
+  }
 }

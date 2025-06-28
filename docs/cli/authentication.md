@@ -1,6 +1,6 @@
 ## Authentication Setup
 
-The Gemini CLI requires you to authenticate with Google's AI services. On initial startup you'll need to configure **one** of the following authentication methods:
+The Gemini CLI supports multiple AI provider authentication methods. On initial startup you'll need to configure **one** of the following authentication methods:
 
 1.  **Login with Google (Gemini Code Assist):**
     - Use this option to log in with your google account.
@@ -74,3 +74,27 @@ The Gemini CLI requires you to authenticate with Google's AI services. On initia
           echo 'export GOOGLE_GENAI_USE_VERTEXAI=true' >> ~/.bashrc
           source ~/.bashrc
           ```
+
+4.  **Anthropic Claude:**
+    - **Option A: API Key (Recommended for most users)**
+      - Obtain your API key from Anthropic Console: [https://console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+      - Set the `ANTHROPIC_API_KEY` environment variable. In the following methods, replace `YOUR_ANTHROPIC_API_KEY` with the API key you obtained from Anthropic Console:
+        - You can temporarily set the environment variable in your current shell session using the following command:
+          ```bash
+          export ANTHROPIC_API_KEY="YOUR_ANTHROPIC_API_KEY"
+          ```
+        - For repeated use, you can add the environment variable to your `.env` file (located in the project directory or user home directory) or your shell's configuration file (like `~/.bashrc`, `~/.zshrc`, or `~/.profile`). For example, the following command adds the environment variable to a `~/.bashrc` file:
+          ```bash
+          echo 'export ANTHROPIC_API_KEY="YOUR_ANTHROPIC_API_KEY"' >> ~/.bashrc
+          source ~/.bashrc
+          ```
+    - **Option B: OAuth 2.0 with PKCE (Most secure)**
+      - Use the interactive OAuth setup command:
+        ```bash
+        npx gemini-cli auth anthropic
+        ```
+      - Select option 2: "OAuth 2.0 with PKCE (secure)"
+      - Follow the prompts to authenticate through your browser
+      - The CLI will automatically handle token refresh
+    - **Option C: Legacy OAuth (For backward compatibility)**
+      - Use the interactive setup command and select option 3: "OAuth Authentication Code (legacy)"

@@ -35,6 +35,7 @@ export default tseslint.config(
       'packages/server/dist/**',
       'eslint-rules/*',
       'bundle/**',
+      'anthropic-login.cjs',
     ],
   },
   eslint.configs.recommended,

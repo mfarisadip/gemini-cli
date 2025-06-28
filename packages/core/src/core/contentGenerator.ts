@@ -141,10 +141,39 @@ export async function createContentGenerator(
   }
 
   if (config.authType === AuthType.USE_ANTHROPIC_CLAUDE) {
-    return createAnthropicContentGenerator({
-      apiKey: config.apiKey,
-      model: config.model,
-    });
+    // Import the auth function
+    const { AuthAnthropic } = await import('../auth/anthropic.js');
+    
+    // Check if we have OAuth access token
+    const access = await AuthAnthropic.access();
+    
+    if (access) {
+      // Use OpenCode-style approach for OAuth - exact copy of working implementation
+      return createAnthropicContentGenerator({
+        apiKey: "",
+        model: config.model,
+        fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+          const access = await AuthAnthropic.access();
+          const headers: Record<string, string> = {
+            ...(init?.headers as Record<string, string> || {}),
+            authorization: `Bearer ${access}`,
+            "anthropic-beta": "oauth-2025-04-20",
+          };
+          delete headers["x-api-key"];
+          
+          return fetch(input, {
+            ...init,
+            headers,
+          });
+        },
+      });
+    } else {
+      // Fallback to API key authentication
+      return createAnthropicContentGenerator({
+        apiKey: config.apiKey,
+        model: config.model,
+      });
+    }
   }
 
   throw new Error(
