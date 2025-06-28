@@ -24,6 +24,12 @@ export * from './code_assist/oauth2.js';
 export * from './code_assist/server.js';
 export * from './code_assist/types.js';
 
+// Export auth modules
+export * from './auth/index.js';
+
+// Export provider modules
+export * from './provider/index.js';
+
 // Export utilities
 export * from './utils/paths.js';
 export * from './utils/schemaValidator.js';

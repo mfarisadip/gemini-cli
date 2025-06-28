@@ -57,6 +57,12 @@ interface CliArgs {
 
 async function parseArguments(): Promise<CliArgs> {
   const argv = await yargs(hideBin(process.argv))
+    .command('auth', 'Manage authentication for different providers', (yargs) =>
+      yargs
+
+        .demandCommand(1, 'You need to specify a provider for auth command')
+        .help(),
+    )
     .option('model', {
       alias: 'm',
       type: 'string',

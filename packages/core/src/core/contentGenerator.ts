@@ -14,6 +14,7 @@ import {
   GoogleGenAI,
 } from '@google/genai';
 import { createCodeAssistContentGenerator } from '../code_assist/codeAssist.js';
+import { createAnthropicContentGenerator } from '../provider/anthropic.js';
 import { DEFAULT_GEMINI_MODEL } from '../config/models.js';
 import { getEffectiveModel } from './modelCheck.js';
 
@@ -38,6 +39,7 @@ export enum AuthType {
   LOGIN_WITH_GOOGLE_PERSONAL = 'oauth-personal',
   USE_GEMINI = 'gemini-api-key',
   USE_VERTEX_AI = 'vertex-ai',
+  USE_ANTHROPIC_CLAUDE = 'anthropic-claude',
 }
 
 export type ContentGeneratorConfig = {
@@ -54,6 +56,7 @@ export async function createContentGeneratorConfig(
 ): Promise<ContentGeneratorConfig> {
   const geminiApiKey = process.env.GEMINI_API_KEY;
   const googleApiKey = process.env.GOOGLE_API_KEY;
+  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
   const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT;
   const googleCloudLocation = process.env.GOOGLE_CLOUD_LOCATION;
 
@@ -96,6 +99,18 @@ export async function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
+  if (authType === AuthType.USE_ANTHROPIC_CLAUDE) {
+    if (anthropicApiKey) {
+      contentGeneratorConfig.apiKey = anthropicApiKey;
+    }
+    // Use Claude model as default for Anthropic
+    contentGeneratorConfig.model = effectiveModel.includes('claude')
+      ? effectiveModel
+      : 'claude-sonnet-4-20250514';
+
+    return contentGeneratorConfig;
+  }
+
   return contentGeneratorConfig;
 }
 
@@ -123,6 +138,13 @@ export async function createContentGenerator(
     });
 
     return googleGenAI.models;
+  }
+
+  if (config.authType === AuthType.USE_ANTHROPIC_CLAUDE) {
+    return createAnthropicContentGenerator({
+      apiKey: config.apiKey,
+      model: config.model,
+    });
   }
 
   throw new Error(

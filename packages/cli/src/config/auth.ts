@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthType } from '@google/gemini-cli-core';
+import { AuthType, hasValidAnthropicTokens } from '@google/gemini-cli-core';
 import { loadEnvironment } from './config.js';
 
 export const validateAuthMethod = (authMethod: string): string | null => {
@@ -35,5 +35,29 @@ export const validateAuthMethod = (authMethod: string): string | null => {
     return null;
   }
 
+  if (authMethod === AuthType.USE_ANTHROPIC_CLAUDE) {
+    // Check if API key is available as fallback
+    if (process.env.ANTHROPIC_API_KEY) {
+      return null;
+    }
+    // Always require OAuth for Anthropic Claude authentication
+    return 'anthropic_oauth_required';
+  }
+
   return 'Invalid auth method selected.';
+};
+
+export const validateAuthMethodAsync = async (
+  authMethod: string,
+): Promise<string | null> => {
+  // For Anthropic, check OAuth tokens first
+  if (authMethod === AuthType.USE_ANTHROPIC_CLAUDE) {
+    const hasTokens = await hasValidAnthropicTokens();
+    if (hasTokens) {
+      return null; // Valid OAuth authentication
+    }
+    return 'anthropic_oauth_required';
+  }
+  
+  return validateAuthMethod(authMethod);
 };

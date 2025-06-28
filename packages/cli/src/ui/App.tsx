@@ -55,7 +55,7 @@ import {
   isEditorAvailable,
   EditorType,
 } from '@google/gemini-cli-core';
-import { validateAuthMethod } from '../config/auth.js';
+import { validateAuthMethodAsync } from '../config/auth.js';
 import { useLogger } from './hooks/useLogger.js';
 import { StreamingContext } from './contexts/StreamingContext.js';
 import {
@@ -160,11 +160,16 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
 
   useEffect(() => {
     if (settings.merged.selectedAuthType) {
-      const error = validateAuthMethod(settings.merged.selectedAuthType);
-      if (error) {
-        setAuthError(error);
-        openAuthDialog();
-      }
+      validateAuthMethodAsync(settings.merged.selectedAuthType).then(
+        (result) => {
+          if (result && result !== 'anthropic_oauth_required') {
+            setAuthError(result);
+            openAuthDialog();
+          }
+          // Note: We don't automatically open auth dialog for 'anthropic_oauth_required'
+          // This prevents infinite loops. The user can manually trigger auth via /auth command
+        },
+      );
     }
   }, [settings.merged.selectedAuthType, openAuthDialog, setAuthError]);
 

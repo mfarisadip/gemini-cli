@@ -34,7 +34,7 @@ import {
   logUserPrompt,
   AuthType,
 } from '@google/gemini-cli-core';
-import { validateAuthMethod } from './config/auth.js';
+import { validateAuthMethodAsync } from './config/auth.js';
 import { setMaxSizedBoxDebugging } from './ui/components/shared/MaxSizedBox.js';
 
 function getNodeMemoryArgs(config: Config): string[] {
@@ -142,9 +142,15 @@ export async function main() {
       if (settings.merged.selectedAuthType) {
         // Validate authentication here because the sandbox will interfere with the Oauth2 web redirect.
         try {
-          const err = validateAuthMethod(settings.merged.selectedAuthType);
-          if (err) {
+          const err = await validateAuthMethodAsync(
+            settings.merged.selectedAuthType,
+          );
+          if (err && err !== 'anthropic_oauth_required') {
             throw new Error(err);
+          } else if (err === 'anthropic_oauth_required') {
+            throw new Error(
+              'Anthropic OAuth authentication required. Please run the CLI in interactive mode first to authenticate.',
+            );
           }
           await config.refreshAuth(settings.merged.selectedAuthType);
         } catch (err) {
@@ -285,9 +291,14 @@ async function validateNonInterActiveAuth(
   }
 
   selectedAuthType = selectedAuthType || AuthType.USE_GEMINI;
-  const err = validateAuthMethod(selectedAuthType);
-  if (err != null) {
+  const err = await validateAuthMethodAsync(selectedAuthType);
+  if (err != null && err !== 'anthropic_oauth_required') {
     console.error(err);
+    process.exit(1);
+  } else if (err === 'anthropic_oauth_required') {
+    console.error(
+      'Anthropic OAuth authentication required. Please run the CLI in interactive mode first to authenticate.',
+    );
     process.exit(1);
   }
 
