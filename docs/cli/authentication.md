@@ -1,4 +1,4 @@
-## Authentication Setup
+# Authentication Setup
 
 The Gemini CLI supports multiple AI provider authentication methods. On initial startup you'll need to configure **one** of the following authentication methods:
 
